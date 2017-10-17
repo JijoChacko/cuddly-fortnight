@@ -54,7 +54,7 @@ $query= C:\windows\system32\schtasks.exe /query
 $search=$Query|Where-Object{$_ -like "*NTG TempCleaner 1.0*"}
     If ($search -eq $null) {
        
-        $commands = Schtasks.exe /Create /XML "$destDir\NTG TempCleaner 1.0.xml" /tn "NTG TempCleaner 1.0" | Out-Null
+        $commands = Schtasks.exe /Create /XML "$destDir\TempCleaner 1.0.xml" /tn "TempCleaner 1.0" | Out-Null
         $commands | Invoke-NativeCommands
     }
 }
