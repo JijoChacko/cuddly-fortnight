@@ -1,0 +1,209 @@
+# 
+# Script name:  Tempcleaner.ps1
+# Created:      26/08/2017
+# Author:       Jijo Chacko 
+# Version:      1.0
+# Description:  Clears Temp files which are not used in the last 7 days.
+# Modules:      NA
+#
+#--------------------------------------------------------------------------
+# Main Body
+#--------------------------------------------------------------------------
+#
+#Function for create log file
+Function Write-LogEntry { 
+    param( 
+        [parameter(Mandatory = $true, HelpMessage = "Value added to the log file.")] 
+        [ValidateNotNullOrEmpty()] 
+        [string]$Value, 
+        [parameter(Mandatory = $true, HelpMessage = "Severity for the log entry. 1 for Informational, 2 for Warning and 3 for Error.")] 
+        [ValidateNotNullOrEmpty()] 
+        [ValidateSet("1", "2", "3")] 
+        [string]$Severity, 
+        [parameter(Mandatory = $false, HelpMessage = "Name of the log file that the entry will written to.")] 
+        [ValidateNotNullOrEmpty()] 
+        [string]$FileName = " TempCleaner 1.0.log" 
+    ) 
+    $LogFilePath = Join-Path -Path C:\Support -ChildPath $FileName 
+    $Time = -join @((Get-Date -Format "HH:mm:ss.fff"), "+", (Get-WmiObject -Class Win32_TimeZone | Select-Object -ExpandProperty Bias)) 
+    $Date = (Get-Date -Format "MM-dd-yyyy") 
+    $Context = $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name) 
+    $LogText = "<![LOG[$($Value)]LOG]!><time=""$($Time)"" date=""$($Date)"" component="" TempCleaner 1.0"" context=""$($Context)"" type=""$($Severity)"" thread=""$($PID)"" file="""">" 
+    try { 
+        Add-Content -Value $LogText -LiteralPath $LogFilePath -ErrorAction Stop 
+    } 
+    catch [System.Exception] { 
+        Write-Warning -Message "Unable to append log entry to  TempCleaner 1.0.log file. Error message: $($_.Exception.Message)" 
+    } 
+} 
+Write-LogEntry -Value " TempCleaner 1.0 execution Started successfully"-Severity 1
+$FreeSpacebefore = Get-CimInstance cim_LogicalDisk -erroraction 'silentlycontinue'|Where-Object {$_.VolumeName -eq 'OSdisk'}| select DeviceID, DriveType, VolumeName, @{n = 'Size (Gb)' ; e = {"{0:n2}" -f ($_.size / 1gb)}}, @{n = 'FreeSpace (Gb)'; e = {"{0:n2}" -f ($_.freespace / 1gb)}}, @{n = 'PercentFree'; e = {"{0:n2}" -f ($_.freespace / $_.size * 100)}} 
+Write-LogEntry -Value "Disk Status before executing  TempCleaner 1.0 is $FreeSpacebefore "-Severity 1
+#Checking the script whether the executed with Admin previlages or not
+If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
+    Write-LogEntry -Value "You must have Administrator rights to execute this program! Please re-run this program with elivated previlages!" -Severity 3
+    Break
+} 
+#Function for delete empty directories
+function Delete-directory {
+    param ([string]$path)
+    try {
+        if ($path.Length -le 0) {
+            Write-LogEntry -Value "Empty path." -Severity 1
+            return
+        }
+        if (-not (test-path -literalPath $path)) {
+            Write-LogEntry -Value  "Invalid path: $path" -Severity 1
+            return
+        }
+        if (@(get-childitem $path).Count -le 0) {
+            Write-LogEntry -Value  "Deleting $path" -Severity 1
+            remove-item $path       
+            return
+        }
+        get-childitem $path | where-object { $_.PsIsContainer} | foreach { Delete-directory $_.FullName }
+        if (@(get-childitem $path).Count -le 0) {
+            Write-LogEntry -Value  "Deleting $path" -Severity 1
+            remove-item $path
+
+        }
+    }
+    catch {
+        Write-LogEntry -Value "Exception occured while removing folder $path" -Severity 3
+    }
+    
+}
+#Deleting files from "C:\Windows\Temp\*" folders which are older than 7 days
+$Exclusion = @("MpCmdRun.txt")
+Try {
+    Write-LogEntry -Value "Starting C:\Windows\Temp\* cleanup activity" -Severity 1
+    $Files = Get-ChildItem -Path  "C:\Windows\Temp\*" -Exclude $Exclusion  -ErrorAction SilentlyContinue -Recurse |where-object {-not ($_.PSIsContainer) -and $_.LastWriteTime -le (Get-Date).AddDays(-2)}  
+    foreach ($File in $Files) {
+        if ($File -ne $NULL) {
+            if ($file.IsReadOnly -eq $true) {  
+                $file.IsReadOnly = $false   
+            }  
+                      Write-LogEntry -Value "Deleting File $File" -Severity 1
+            $fileremoval = Remove-Item $File.FullName -Force -Confirm:$false | out-null
+            If ($fileremoval.Returnvalue -eq 0) {
+            
+                Write-LogEntry -Value "Deleted File $File" -Severity 1
+            }
+            
+        }
+        else {
+            Write-LogEntry -Value  "No more files to delete!" -Severity 1
+        }
+    }
+}
+Catch {
+    Write-LogEntry -Value "Exception occured while clearing $File from C:\Windows\Temp\* folder" -Severity 3
+
+}
+#Deleting empty directories from "C:\Windows\Temp\"
+Try {
+    Delete-directory -path "C:\Windows\Temp\"
+}
+catch {
+    Write-LogEntry -Value "Exception occured while clearing empty folders C:\Windows\Temp\ location" -Severity 3
+}
+#Deleting files from "C:\Users\*\AppData\Local\Temp\*" folders which are older than 7 days
+Try {
+
+    Write-LogEntry -Value "Starting C:\Users\*\AppData\Local\Temp\* cleanup activity" -Severity 1
+    $Files = Get-ChildItem -Path  "C:\Users\*\AppData\Local\Temp\*" -Exclude $Exclusion -ErrorAction SilentlyContinue -Recurse |where-object {-not ($_.PSIsContainer) -and $_.LastWriteTime -le (Get-Date).AddDays(-2)}  
+    foreach ($File in $Files) {
+        if ($File -ne $NULL) {
+            if ($file.IsReadOnly -eq $true) {  
+                $file.IsReadOnly = $false   
+            }  
+            Write-LogEntry -Value "Deleting File $File" -Severity 1
+            $fileremoval = Remove-Item $File.FullName -Force -Confirm:$false | out-null
+            If ($fileremoval.Returnvalue -eq 0) {
+            
+                Write-LogEntry -Value "Deleted File $File" -Severity 1
+            }
+            
+        }
+        else {
+            Write-LogEntry -Value  "No more files to delete!" -Severity 1
+        }
+    }
+}
+Catch {
+    Write-LogEntry -Value "Exception occured while clearing $File from C:\Users\*\AppData\Local\Temp\ folder" -Severity 3
+
+}
+#Deleting empty directories from C:\Users\*\AppData\Local\Temp\* 
+try
+{
+#getting all the users logged in to the system via checking C:\users contents.
+$Usernames=@(Get-Item C:\Users\*)|Select-object Name
+foreach ($user in $Usernames.name)
+    {
+        #Checking whether C:\Users\<User name>\Appdata\Local\Temp\ is exist
+        If(Test-path -Path "C:\Users\$user\Appdata\Local\Temp\" -ErrorAction SilentlyContinue)
+        {
+          $path="C:\Users\$user\Appdata\Local\Temp\"
+          Write-LogEntry -Value  "Deleting $path" -Severity 1
+           Delete-directory -path $path
+        }
+    } 
+}
+catch
+    {
+        Write-LogEntry -Value "Exception occured while clearing empty folders from $path" -Severity 3 
+    }
+#Code for cleaning CCMcache folder contents which are older than 100 days. 
+Try {
+    Write-LogEntry -Value "Starting CCMcache Cleanup"-Severity 1
+    $CMObject = New-Object -ComObject 'UIResource.UIResourceMgr'
+    $cmcacheobjects = $CMObject.getcacheinfo()
+    $CacheInfo = $cmcacheobjects.Getcacheelements()|Where-Object {($_.LastReferenceTime -le (get-date).AddDays(-100))}  |Select-object Contentid, location, LastReferenceTime, CacheElementId, @{n = 'ContentSize in MB'; e = {$_.Contentsize / 1024}}
+
+    If ($CacheInfo -ne $null) {
+        Foreach ($Entry in $CacheInfo.CacheElementId) {
+            Write-LogEntry -Value "Deleting $entry from CCMcache Folder" -Severity 1
+            $cmcacheobjects.DeleteCacheElement($Entry)
+        }
+    }
+}
+Catch {
+    Write-LogEntry -Value "Exception occured while cleaning CCMcache folder"-Severity 3
+}
+#Code for Update Cleanup using windows cleanmgr.exe 
+$Reg_Array = @(
+    "SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Update Cleanup"
+)
+Try {
+    Write-LogEntry -Value "Starting Update Cleanup using windows cleanmgr.exe" -Severity 1
+    Foreach ($entry in $Reg_Array) { 
+        $HKEY_Local_Machine = 2147483650 
+        $reg = [WMIClass]"ROOT\DEFAULT:StdRegProv"
+        $Key = $entry
+        $ValueName = "StateFlags5432"
+        $Value = "00000002"
+        $results = $reg.getDWORDValue($HKEY_LOCAL_MACHINE, $Key, $ValueName)
+        If ($results.uValue -ne $null) {
+            Write-LogEntry -Value "Registry key $key with Dword value $value alreday Present"-Severity 1
+        }
+        else {
+            $Createkey = $reg.SetDWORDValue($HKEY_LOCAL_MACHINE, $Key, $ValueName, $Value)
+            If ($Createkey.Returnvalue -eq 0) {
+            
+                Write-LogEntry -Value "Registry key $key with Dword value $value is created"-Severity 1
+            }
+                   
+        }
+    }
+}
+Catch {
+    Write-LogEntry -Value "Exception occured while creating registry key's for Update Cleanup "-Severity 3
+}
+Start-Process -FilePath CleanMgr.exe -ArgumentList '/sagerun:5432' -NoNewWindow -Wait
+$FreeSpaceafter = Get-CimInstance cim_LogicalDisk -erroraction 'silentlycontinue'|Where-Object {$_.VolumeName -eq 'OSdisk'}| select DeviceID, DriveType, VolumeName, @{n = 'Size (Gb)' ; e = {"{0:n2}" -f ($_.size / 1gb)}}, @{n = 'FreeSpace (Gb)'; e = {"{0:n2}" -f ($_.freespace / 1gb)}}, @{n = 'PercentFree'; e = {"{0:n2}" -f ($_.freespace / $_.size * 100)}} 
+Write-LogEntry -Value "Disk Status after executing  TempCleaner 1.0 is $FreeSpaceafter"-Severity 1
+Write-LogEntry -Value " TempCleaner 1.0 execution completed successfully"-Severity 1
+#--------------------------------------------------------------------------
+# End
+#--------------------------------------------------------------------------
