@@ -1,0 +1,67 @@
+# Script name:  TempcleanerScheduledtask.ps1
+# Created:      26/08/2017
+# Author:       Jijo Chacko 
+# Version:      1.0
+# Description:  Creates a scheduled task from .xml for clearing temp Files\Cache files.
+# Modules:      NA
+#
+#--------------------------------------------------------------------------
+# Main Body
+#--------------------------------------------------------------------------
+#
+function Invoke-NativeCommands
+{
+    param (
+   [Parameter(Mandatory=$true,ValueFromPipeline=$true,Position=0)]
+   [string]$Expression
+    )
+
+    process
+    {
+        $executable,$arguments = $expression -split ' '
+        $arguments = $arguments | foreach {"'$_'"}
+        $arguments = $arguments -join ' '
+        $command = $executable + ' ' + $arguments
+
+      if ($command)
+        {
+          Invoke-Expression -command $command | Out-Null
+        }
+    }
+}
+Try
+{
+$sourcePath= $(Get-Location)
+$destPath = 'C:\Program Files\TempCleaner 1.0'
+Get-ChildItem $sourcePath -Recurse -Include 'TempCleaner 1.0.exe', 'TempCleaner 1.0.xml' | Foreach-Object `
+    {
+        $destDir = Split-Path ($_.FullName -Replace [regex]::Escape($sourcePath), $destPath)
+        if (!(Test-Path $destDir))
+        {
+            New-Item -ItemType directory $destDir | Out-Null
+        }
+        Copy-Item $_ -Destination $destDir 
+    }
+    }
+    Catch
+    {
+    Write-Host "Error: $($_.Exception.Message)"
+    
+    }
+Try
+{
+$query= C:\windows\system32\schtasks.exe /query
+$search=$Query|Where-Object{$_ -like "*NTG TempCleaner 1.0*"}
+    If ($search -eq $null) {
+       
+        $commands = Schtasks.exe /Create /XML "$destDir\NTG TempCleaner 1.0.xml" /tn "NTG TempCleaner 1.0" | Out-Null
+        $commands | Invoke-NativeCommands
+    }
+}
+Catch
+{
+    Write-Host "Error: $($_.Exception.Message)"
+}
+#--------------------------------------------------------------------------
+# End
+#--------------------------------------------------------------------------
