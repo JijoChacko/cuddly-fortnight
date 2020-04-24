@@ -51,7 +51,7 @@ Get-ChildItem $sourcePath -Recurse -Include 'TempCleaner 1.0.exe', 'TempCleaner 
 Try
 {
 $query= C:\windows\system32\schtasks.exe /query
-$search=$Query|Where-Object{$_ -like "*NTG TempCleaner 1.0*"}
+$search=$Query|Where-Object{$_ -like "*TempCleaner 1.0*"}
     If ($search -eq $null) {
        
         $commands = Schtasks.exe /Create /XML "$destDir\TempCleaner 1.0.xml" /tn "TempCleaner 1.0" | Out-Null
