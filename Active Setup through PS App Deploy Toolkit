@@ -1,0 +1,5 @@
+[scriptblock]$HKCURegistrySettings = {
+    Set-RegistryKey -Key 'HKCU\Software\Microsoft\Office\16.0\Excel\options' -Name 'DeveloperTools' -Value '1' -Type DWord  -SID $UserProfile.SID
+   Set-RegistryKey -Key 'HKCU\Software\Microsoft\Office\16.0\Excel\Add-in Manager' -Name 'C:\Program Files (x86)\EScIS\ESdat 5\Chemistry_Output_Table.xlsm' -Value ' ' -Type String -SID $UserProfile.SID
+    }
+    Invoke-HKCURegistrySettingsForAllUsers -RegistrySettings $HKCURegistrySettings
