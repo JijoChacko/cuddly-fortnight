@@ -1,0 +1,15 @@
+$SecureSerialKey = Read-Host "Enter Serial Key" -AsSecureString 
+Try{
+	$Conversion = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($SecureSerialKey)
+	$SerialKey= [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($Conversion)
+}
+Catch{
+
+	Write-Host "We could not catch any exceptions "
+}
+
+Finally{
+
+Write-Host $SerialKey
+
+}
