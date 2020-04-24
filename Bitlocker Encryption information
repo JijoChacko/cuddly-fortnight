@@ -1,0 +1,96 @@
+<#
+.SYNOPSIS
+Retrieves Bitlocker Encryption information.
+.DESCRIPTION
+Retrieves Bitlocker Encryption information from multiple computers.
+.PARAMETER Machinelist
+File name and path of the file contains machine information.
+
+.EXAMPLE
+Get-BitlockerInfo -Machinelist <machineList file Name> -LogfileName <<machineList file Name.csv>
+.CREATED BY
+Jijo Chacko,jijochacko2005@gmail.com
+#>
+
+    [CmdletBinding()]
+    Param(
+    [Parameter(Mandatory=$True)][string]$Machinelist,
+    [Parameter(Mandatory=$True)] [String]$LogfileName
+    )
+    Clear-Host
+    $machines=Get-Content -Path $Machinelist
+    $Bitlockerforprint=@()
+    Foreach($Computer in $Machines)
+    {
+    $ping = Test-Connection $Computer -Count 1 -ErrorAction SilentlyContinue
+    if ($ping.statuscode -eq 0)
+    {
+    Try
+    {
+    $EncryptionStatus=Manage-bde -computername $Computer -status C:
+    $Size=$EncryptionStatus|Where-Object{$_ -like ‘*Size:*’}
+    If ($size -ne $null)
+    {
+    $Newsize=$size.Substring(26)
+    }
+    Else
+    {
+    $Newsize="Bitlocker not Enabled"
+    
+    }
+    $Conversionstatus=$EncryptionStatus|Where-Object{$_ -like ‘*Conversion Status:*’}
+    If ($Conversionstatus -ne $null)
+    {
+    $newConversionstatus=$Conversionstatus.Substring(26)
+    }
+    Else
+    {
+    $newConversionstatus="Bitlocker not Enabled"
+    
+    }
+    $Percentage=$EncryptionStatus|Where-Object{$_ -like ‘*Percentage Encrypted:*’}
+    If ($Percentage -ne $null)
+    {
+    $newpercentage=$Percentage.Substring(26)
+    }
+    Else
+    {
+    $newpercentage="Bitlocker not Enabled"
+    
+    }
+    $Protectionstatus=$EncryptionStatus|Where-Object{$_ -like ‘*Protection Status:*’}
+    If ($Protectionstatus -ne $null)
+    {
+    $newprotectionstatus=$Protectionstatus.Substring(26)
+    }
+    Else
+    {
+    $newprotectionstatus ="Bitlocker not Enabled"
+    
+    }
+    
+    $details=New-object psobject
+    $details|Add-Member -Type NoteProperty -Name “Computer Name" -Value $Computer
+    $details|Add-Member -Type NoteProperty -Name Size -Value $Newsize
+    $details|Add-Member -Type NoteProperty -Name “Percentage Completed" -Value $newpercentage
+    $details|Add-Member -Type NoteProperty -Name “Protection Status" -Value $newprotectionstatus
+    $details|Add-Member -Type NoteProperty -Name “Conversion Status" -Value $newConversionstatus
+    $Bitlockerforprint += $details
+    $Newsize= $null
+    $newpercentage = $null
+    $newprotectionstatus = $null
+    $newConversionstatus = $null
+    
+    }
+    Catch
+    {
+    Write-Host ($_.Exception.Message) -ForegroundColor Red
+    }
+    }
+    Else
+    {
+    Write-Warning “Destination Host Unreachable $Computer “
+    }
+    }
+    $Bitlockerforprint|Select-Object “Computer Name",Size,"Percentage Completed","Conversion Status","Protection Status"|format-table -AutoSize
+    $Bitlockerforprint|Select-Object “Computer Name",Size,"Percentage Completed","Conversion Status","Protection Status"|Export-Csv $LogfileName -force -encoding “unicode" -NoClobber -Append
