@@ -1,0 +1,2 @@
+Add-OdbcDsn -Name "My_Conn" -DriverName "ODBC Driver 11 for SQL Server" -DsnType "System" -Platform "32-bit" -SetPropertyValue @("Server=My_Server", "Database=My_DB")
+Add-OdbcDsn -Name "My_Conn" -DriverName "ODBC Driver 11 for SQL Server" -DsnType "System" -Platform "64-bit" -SetPropertyValue @("Server=My_Server", "Database=My_DB")
