@@ -1,0 +1,111 @@
+1.Get the deployment ID\advertisement ID by running below query.
+================================================================
+
+Select * from V_advertisement where advertisementname like '%Centrino%'
+
+ 
+2.provide advertisement ID returned by above query as argument(Shaded in Green) in below query.
+================================================================ 
+
+SELECT DISTINCT
+
+        v_R_System.Name0 AS [Machine Name] ,
+
+        --v_RA_System_SystemOUName.System_OU_Name0 AS [Agency],
+
+        Tasksequencestatus.AdvertisementID AS [TS Advertisement ID] ,
+
+        Tasksequencestatus.GroupName AS [ Last Executed Group Name] ,
+
+        Tasksequencestatus.Step AS [Last Executed Step] ,
+
+        Tasksequencestatus.ActionName [Last Action] ,
+
+        Tasksequencestatus.LastStatusMessageIDName AS [Last Status Message] ,
+
+        Tasksequencestatus.ExecutionTime AS [Last Step execution Time]
+
+FROM    v_R_System
+
+        INNER JOIN v_RA_System_SystemOUName ON v_R_System.ResourceID = v_RA_System_SystemOUName.ResourceID
+
+        INNER JOIN ( SELECT v_TaskExecutionStatus.ResourceID ,
+
+                            v_TaskExecutionStatus.Step ,
+
+                            v_TaskExecutionStatus.GroupName ,
+
+                            v_TaskExecutionStatus.ActionName ,
+
+                            v_TaskExecutionStatus.ExecutionTime ,
+
+                            v_TaskExecutionStatus.AdvertisementID ,
+
+                            v_TaskExecutionStatus.LastStatusMessageIDName ,
+
+                            v_TaskExecutionStatus.ExitCode ,
+
+                            ROW_NUMBER() OVER ( PARTITION BY ResourceID ORDER BY v_TaskExecutionStatus.Step DESC
+
+ 
+
+, v_TaskExecutionStatus.ExecutionTime DESC ) AS Point
+
+                     FROM   v_TaskExecutionStatus
+
+                     WHERE  v_TaskExecutionStatus.AdvertisementID = 'QPA20716'
+
+                   ) Tasksequencestatus ON Tasksequencestatus.ResourceID = v_R_System.ResourceID
+
+                                           AND Tasksequencestatus.Point = 1
+
+ORDER BY v_R_System.Name0
+
+ 
+
+ 
+
+Single  machine Status Query
+================================================================
+
+ 
+
+DECLARE @__timezoneoffset INT
+
+SELECT  @__timezoneoffset = DATEDIFF(ss, GETUTCDATE(), GETDATE())
+
+ 
+
+SELECT  v_TaskExecutionStatus.AdvertisementID ,
+
+        v_R_System.ResourceID ,
+
+        v_R_System.Name0 ,
+
+        DATEADD(ss, @__timezoneoffset, v_TaskExecutionStatus.ExecutionTime) AS [Execution Time] ,
+
+        v_TaskExecutionStatus.Step ,
+
+        v_TaskExecutionStatus.ActionName ,
+
+        v_TaskExecutionStatus.GroupName ,
+
+        v_TaskExecutionStatus.LastStatusMessageID ,
+
+        v_TaskExecutionStatus.LastStatusMessageIDName ,
+
+        v_TaskExecutionStatus.ExitCode ,
+
+        v_TaskExecutionStatus.ActionOutput
+
+FROM    v_TaskExecutionStatus
+
+        INNER JOIN v_R_System ON v_TaskExecutionStatus.ResourceID = v_R_System.ResourceID
+
+WHERE   v_TaskExecutionStatus.AdvertisementID IN ( 'QPA20716' )
+
+        AND v_R_System.Name0 = 'FA7865'
+
+ORDER BY v_R_System.Name0 ,
+
+        v_TaskExecutionStatus.ExecutionTime DESC
