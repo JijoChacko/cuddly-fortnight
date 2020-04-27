@@ -1,0 +1,33 @@
+SELECT DISTINCT v_R_System.Name0 AS [Machine Name]
+	,v_GS_COMPUTER_SYSTEM.Manufacturer0 AS [make]
+	,v_GS_COMPUTER_SYSTEM.Model0 AS [Model]
+	,v_GS_DISK.Model0 AS [Disk Model]
+	,v_GS_DISK.MediaType0 AS [Disk Type]
+	,v_GS_BITLOCKER_DETAILS.DriveLetter0 AS [Encripted Drive]
+	,CASE 
+		WHEN v_GS_BITLOCKER_DETAILS.ProtectionStatus0 = '0'
+			THEN 'Protection OFF'
+		WHEN v_GS_BITLOCKER_DETAILS.ProtectionStatus0 = '1'
+			THEN 'Protection ON (Unlocked)'
+		WHEN v_GS_BITLOCKER_DETAILS.ProtectionStatus0 = '2'
+			THEN 'Protection ON (Locked)'
+		ELSE ''
+		END AS [Bitlocker Status]
+	,(
+		SELECT MAX(LastHWScan) AS Expr1
+		FROM v_GS_WORKSTATION_STATUS
+		WHERE (ResourceID = v_R_System.ResourceID)
+		) AS [HW Inventory Date]
+	,v_GS_PC_BIOS.BIOSVersion0 AS [BIOS version]
+	,v_GS_OPERATING_SYSTEM.Caption0 AS [OS]
+	,v_GS_OPERATING_SYSTEM.CSDVersion0 AS [Service pack]
+FROM v_R_System
+INNER JOIN v_GS_DISK ON v_R_System.ResourceID = v_GS_DISK.ResourceID
+INNER JOIN v_GS_COMPUTER_SYSTEM ON v_R_System.ResourceID = v_GS_COMPUTER_SYSTEM.ResourceID
+INNER JOIN v_GS_PC_BIOS ON v_GS_PC_BIOS.ResourceID = v_R_System.ResourceID
+INNER JOIN v_GS_OPERATING_SYSTEM ON v_GS_OPERATING_SYSTEM.ResourceID = v_R_System.ResourceID
+LEFT JOIN v_GS_WORKSTATION_STATUS ON v_R_System.ResourceID = v_GS_WORKSTATION_STATUS.ResourceID
+LEFT JOIN v_GS_BITLOCKER_DETAILS ON v_R_System.ResourceID = v_GS_BITLOCKER_DETAILS.ResourceID
+WHERE v_GS_COMPUTER_SYSTEM.Model0 LIKE '%HP ProDesk 600 G3 DM%'
+	AND v_GS_DISK.MediaType0 = 'Fixed hard disk media'
+	AND v_GS_BITLOCKER_DETAILS.DriveLetter0 = 'C:'
