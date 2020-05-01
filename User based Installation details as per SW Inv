@@ -1,0 +1,25 @@
+
+DECLARE @__timezoneoffset INT
+SELECT @__timezoneoffset = DATEDIFF(ss, GETUTCDATE(), GETDATE())
+
+SELECT dbo.v_R_System.Name0 AS [Asset Name]
+	,dbo.v_GS_SoftwareProduct.ProductName
+	,dbo.v_GS_SoftwareProduct.ProductVersion
+	,DATEADD(ss, @__timezoneoffset, v_GS_LastSoftwareScan.LastScanDate) AS [SW Scan Date]
+	,DATEADD(ss, @__timezoneoffset, v_GS_WORKSTATION_STATUS.LastHWScan) AS [HW Scan Date]
+FROM dbo.v_GS_SoftwareProduct
+INNER JOIN dbo.v_R_System ON v_GS_SoftwareProduct.resourceid = v_R_System.ResourceID
+INNER JOIN dbo.v_RA_System_SystemOUName ON v_RA_System_SystemOUName.ResourceID = v_R_System.ResourceID
+INNER JOIN v_GS_LastSoftwareScan ON v_GS_LastSoftwareScan.ResourceID = v_R_System.ResourceID
+INNER JOIN v_GS_WORKSTATION_STATUS ON v_GS_WORKSTATION_STATUS.ResourceID = v_R_System.ResourceID
+WHERE (dbo.v_GS_SoftwareProduct.ProductName = 'Google Chrome')
+	AND (dbo.v_GS_SoftwareProduct.ProductVersion < '74.0.3729.169')
+	AND (
+		v_RA_System_SystemOUName.System_OU_Name0 LIKE 'PROD.MAIN.NTGOV/NTG/DoH/%'
+		OR v_RA_System_SystemOUName.System_OU_Name0 LIKE 'PROD.MAIN.NTGOV/NTG/CAHS/%'
+		OR v_RA_System_SystemOUName.System_OU_Name0 LIKE 'PROD.MAIN.NTGOV/NTG/TEHS/%'
+		OR v_RA_System_SystemOUName.System_OU_Name0 LIKE 'PROD.MAIN.NTGOV/NTG/Health-Remote/%'
+		OR v_RA_System_SystemOUName.System_OU_Name0 LIKE 'PROD.MAIN.NTGOV/NTG/Health-RemoteSAT/%'
+		)
+
+		Order by dbo.v_R_System.Name0
