@@ -1,0 +1,136 @@
+Compliance Info Query:
+========================
+
+Select v_R_System.name0 as 'Name'  
+       , v_RA_System_ResourceNames.Resource_Names0 as 'FQDN'  
+       , v_R_System.Resource_Domain_OR_Workgr0 as 'DOMAIN'  
+       , v_GS_OPERATING_SYSTEM.Caption0 as 'Operating System'  
+       , CASE v_GS_OPERATING_SYSTEM.ProductType0  
+            WHEN 1 THEN 'WORKSTATION'  
+            WHEN 2 THEN 'DOMAIN CONTROLLER'  
+            WHEN 3 THEN 'SERVER'  
+        END AS 'OSCLASS'  
+       , V_UpdateInfo.ArticleID  
+       , CASE 
+            WHEN V_Update_ComplianceStatus.Status = '0' THEN 'UNKNOWN' 
+            WHEN V_UPDATE_ComplianceStatus.Status = '1' THEN 'NOT REQUIRED' 
+            WHEN v_Update_ComplianceStatus.Status = '2' THEN 'MISSING'  
+            WHEN v_Update_ComplianceStatus.Status = '3' THEN 'INSTALLED'  
+        else 'UNKNOWN'  
+        END AS 'PatchStatus'  
+       , V_UpdateInfo.DateCreated  
+           , V_UpdateInfo.Title  
+           , V_UpdateInfo.InfoURL  
+           , V_R_System.ResourceID  
+           , V_Update_complianceStatus.LastStatusCheckTime 
+from v_R_System  
+left join v_Update_ComplianceStatus on v_R_System.ResourceID = v_Update_ComplianceStatus.ResourceID  
+left join V_UpdateInfo on v_Update_ComplianceStatus.CI_ID = V_UpdateInfo.CI_ID  
+left join v_RA_System_ResourceNames on v_R_System.ResourceID = v_RA_System_ResourceNames.ResourceID  
+left join v_UpdateScanStatus on v_R_System.ResourceID = v_UpdateScanStatus.ResourceID  
+left join v_GS_WORKSTATION_STATUS on v_R_System.ResourceID = v_GS_WORKSTATION_STATUS.ResourceID  
+left join v_GS_OPERATING_SYSTEM on v_R_System.ResourceID = v_GS_OPERATING_SYSTEM.ResourceID  
+where v_UpdateInfo.CIType_ID = '8' and v_UpdateInfo.IsSuperseded = '0' 
+
+Client Info Query:
+==================
+
+select V_R_System.Name0 
+    , CASE V_R_System.Client0 
+              WHEN 1 THEN 'INSTALLED' 
+              ELSE 'NOT INSTALLED' 
+          END AS CLIENTSTATUS 
+    , V_R_System.Client_Version0 
+        , V_R_System.Operating_System_Name_and0 
+        , v_R_System.Last_Logon_Timestamp0 
+        , v_GS_OPERATING_SYSTEM.Caption0 as 'OSIfClientInstalled' 
+from v_R_System 
+Left OUTER Join V_GS_Operating_System on V_R_System.ResourceID = V_GS_Operating_System.REsourceID 
+
+Software Update Group Members:
+==============================
+with SUGInfo as 
+( 
+    Select V_UpdateInfo.CI_ID 
+        , v_UpdateInfo.CIType_ID 
+        , V_UpdateInfo.Title 
+    from v_UpdateInfo 
+    where v_UpdateInfo.CIType_ID = '9' 
+) 
+Select SUGInfo.Title as 'SoftwareUpdateGroup' 
+    , v_CIRelation.FromCIID 
+    , v_CIRelation.ToCIID 
+    , V_UpdateInfo.ArticleID 
+    , V_UpdateInfo.Title     
+from SUGInfo  
+Left Outer Join v_CIRelation on SUGInfo.CI_ID = v_CIRelation.FromCIID  
+Left outer Join v_UpdateInfo on v_CIRelation.ToCIID = V_UpdateInfo.CI_ID
+
+Cleaned up UpdateInfo
+=====================
+
+Select V_UpdateInfo.ArticleID 
+     , V_UpdateInfo.Title 
+     , V_UpdateInfo.InfoURl 
+from V_UpdateInfo 
+Where V_UpdateInfo.ArticleID is NOT Null and V_UpdateInfo.ArticleID !=''
+
+Collection Filter to only return collections that we care about. This uses a wild card parameter when the dashboard first starts up. 
+=====================================================================================================================================
+select v_FullCollectionMembership.Name 
+, v_Collection.CollectionID 
+, v_Collection.Name 
+from v_FullCollectionMembership 
+Left Outer Join v_Collection on v_FullCollectionMembership.CollectionID = V_Collection.CollectionId 
+where V_Collection.Name like '%'
+ 
+ Report for a particular KB ID
+ =============================
+ DECLARE @__timezoneoffset INT
+
+SELECT @__timezoneoffset = DATEDIFF(ss,GETUTCDATE(),GETDATE())
+
+SELECT DISTINCT
+
+                         v_R_System.Name0 as [Machine Name],  v_UpdateInfo.Title AS [Update Name], v_UpdateInfo.BulletinID AS MS#, v_UpdateInfo.ArticleID AS KB#,
+
+                                                                             CASE
+
+WHEN v_UpdateComplianceStatus.Status='2' THEN 'Applicable'
+
+WHEN v_UpdateComplianceStatus.Status='3' THEN 'Installed'
+
+ 
+
+ELSE '' END AS 'Update Status' ,
+
+ 
+
+                                         MAX(                                     CASE
+
+                                         WHEN V_updateinfo.IsSuperseded = '1' THEN 'Yes'                                   
+
+                                         ELSE 'No' END) AS 'Superseded',  MAx(CASE
+
+                                         WHEN  V_updateinfo.IsDeployed = '1' THEN 'Yes'                                    
+
+                                         ELSE 'No' END) AS 'Deployed',
+
+                        DATEADD(ss, @__timezoneoffset,  v_UpdateComplianceStatus.LastStatusChangeTime) AS [Status Time\ Install Time]
+
+FROM            v_R_System INNER JOIN
+
+                         v_UpdateComplianceStatus ON v_UpdateComplianceStatus.ResourceID = v_R_System.ResourceID INNER JOIN
+
+                         v_UpdateInfo ON v_UpdateComplianceStatus.CI_ID = v_UpdateInfo.CI_ID INNER JOIN
+
+                                         v_RA_System_SystemOUName ON v_RA_System_SystemOUName.ResourceID=v_R_System.ResourceID
+
+WHERE     v_UpdateInfo.ArticleID in('3078601')
+
+Group by  v_R_System.Name0,v_UpdateInfo.Title,v_UpdateInfo.BulletinID,v_UpdateInfo.ArticleID,V_updateinfo.IsDeployed ,v_UpdateComplianceStatus.Status,v_UpdateComplianceStatus.LastStatusChangeTime
+
+ 
+
+
+ 
