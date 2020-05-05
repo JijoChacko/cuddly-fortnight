@@ -1,0 +1,200 @@
+SCCM Clients Collections
++++++++++++++++++++++++++++
+
+Clients not approved
+=====================
+select SMS_R_SYSTEM.ResourceID, SMS_R_SYSTEM.ResourceType, SMS_R_SYSTEM.Name, SMS_R_SYSTEM.SMSUniqueIdentifier,
+ SMS_R_SYSTEM.ResourceDomainORWorkgroup, SMS_R_SYSTEM.Client from SMS_R_System
+ inner join SMS_CM_RES_COLL_SMS00001 on SMS_CM_RES_COLL_SMS00001.ResourceId = SMS_R_System.ResourceId
+ where SMS_CM_RES_COLL_SMS00001.IsApproved= "0"
+ 
+Clients requiring a reboot
+=====================
+select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,
+ SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,
+ SMS_R_SYSTEM.Client from SMS_R_System join sms_combineddeviceresources on
+ sms_combineddeviceresources.resourceid = sms_r_system.resourceid
+ where sms_combineddeviceresources.clientstate != 0
+
+All SCCM client computers with less than 5GB free disk space on C:
+==================================================================
+select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,
+ SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,
+ SMS_R_SYSTEM.Client from SMS_R_System inner join SMS_G_System_LOGICAL_DISK on SMS_G_System_LOGICAL_DISK.ResourceID = SMS_R_System.ResourceId
+ where SMS_G_System_LOGICAL_DISK.DeviceID = "C:" and SMS_G_System_LOGICAL_DISK.FreeSpace <= 5000
+
+All computer objects with client installed in the specific site “21”
+===================================================================
+select SMS_R_System.ResourceId, SMS_R_System.ResourceType, SMS_R_System.Name, SMS_R_System.SMSUniqueIdentifier, SMS_R_System.ResourceDomainORWorkgroup, SMS_R_System.Client from  SMS_R_System where SMS_R_System.ADSiteName = "21" and SMS_R_System.Client = 1
+All computers without an SCCM client
+select SMS_R_System.ResourceId, SMS_R_System.ResourceType, SMS_R_System.Name, SMS_R_System.SMSUniqueIdentifier, SMS_R_System.ResourceDomainORWorkgroup, SMS_R_System.Client from  SMS_R_System where SMS_R_System.Client = "0"
+
+Active Directory Collections
+++++++++++++++++++++++++++++
+Based on OU
+=====================
+Replace “domain.local/OU/OU” with your own domain name and OU that you need a collection of.
+
+select * from  SMS_R_System where LOWER(SMS_R_System.SystemOUName) = "domain.local/OU/OU"
+
+Based on many nested OU
+
+In case you have many repeated OU structure (one OU name exist in many other OU, example Workstations). Replace “domain.local/%/Workstations” with your own domain name and OU that you need a collection of.
+=====================
+select *  from  SMS_R_System where SMS_R_System.SystemOUName like "domain.local/%/Workstations"
+=====================
+Based on domain membership.
+
+Replace “domain” with the NETBIOS name of your domain.
+=====================
+select * from  SMS_R_System where SMS_R_System.ResourceDomainORWorkgroup = "domain"
+
+Workstations Collections
+=====================
+All Workstations
+
+select SMS_R_SYSTEM.ResourceID, SMS_R_SYSTEM.ResourceType, SMS_R_SYSTEM.Name, SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_System.OperatingSystemNameandVersion,
+ SMS_R_SYSTEM.ResourceDomainORWorkgroup, SMS_R_SYSTEM.Client
+ from SMS_R_System where SMS_R_System.OperatingSystemNameandVersion like "Microsoft Windows NT Workstation%"
+All Windows 10
+select SMS_R_SYSTEM.ResourceID, SMS_R_SYSTEM.ResourceType, SMS_R_SYSTEM.Name, SMS_R_SYSTEM.SMSUniqueIdentifier,
+SMS_R_SYSTEM.ResourceDomainORWorkgroup, SMS_R_SYSTEM.Client from SMS_R_System
+where SMS_R_System.OperatingSystemNameandVersion like "Microsoft Windows NT Workstation 10.0%"
+All Windows 10 November 2019 Update 19H2 (1909)
+select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System inner join SMS_G_System_OPERATING_SYSTEM on SMS_G_System_OPERATING_SYSTEM.ResourceID = SMS_R_System.ResourceId where SMS_G_System_OPERATING_SYSTEM.BuildNumber = "18363"
+All Windows 10 May 2019 Update 19H1 (1903)
+select SMS_R_System.ResourceId, SMS_R_System.ResourceType, SMS_R_System.Name, SMS_R_System.SMSUniqueIdentifier, SMS_R_System.ResourceDomainORWorkgroup, SMS_R_System.Client from  SMS_R_System inner join SMS_G_System_OPERATING_SYSTEM on SMS_G_System_OPERATING_SYSTEM.ResourceID = SMS_R_System.ResourceId where SMS_G_System_OPERATING_SYSTEM.BuildNumber = "18362"
+All Windows 10 October 2018 Update (1809)
+select SMS_R_System.ResourceId, SMS_R_System.ResourceType, SMS_R_System.Name, SMS_R_System.SMSUniqueIdentifier, SMS_R_System.ResourceDomainORWorkgroup, SMS_R_System.Client from  SMS_R_System inner join SMS_G_System_OPERATING_SYSTEM on SMS_G_System_OPERATING_SYSTEM.ResourceID = SMS_R_System.ResourceId where SMS_G_System_OPERATING_SYSTEM.BuildNumber = "17763"
+All Windows 10 April 2018 Update (1803)
+select SMS_R_System.ResourceId, SMS_R_System.ResourceType, SMS_R_System.Name, SMS_R_System.SMSUniqueIdentifier, SMS_R_System.ResourceDomainORWorkgroup, SMS_R_System.Client from  SMS_R_System inner join SMS_G_System_OPERATING_SYSTEM on SMS_G_System_OPERATING_SYSTEM.ResourceID = SMS_R_System.ResourceId where SMS_G_System_OPERATING_SYSTEM.BuildNumber = "17134"
+All Windows 10 Fall Creators Update (1709)
+select SMS_R_System.ResourceId, SMS_R_System.ResourceType, SMS_R_System.Name, SMS_R_System.SMSUniqueIdentifier, SMS_R_System.ResourceDomainORWorkgroup, SMS_R_System.Client from  SMS_R_System inner join SMS_G_System_OPERATING_SYSTEM on SMS_G_System_OPERATING_SYSTEM.ResourceID = SMS_R_System.ResourceId where SMS_G_System_OPERATING_SYSTEM.BuildNumber = "16299"
+All Windows 10 Creators Update (1703)
+ select SMS_R_System.ResourceId, SMS_R_System.ResourceType, SMS_R_System.Name, SMS_R_System.SMSUniqueIdentifier, SMS_R_System.ResourceDomainORWorkgroup, SMS_R_System.Client from  SMS_R_System inner join SMS_G_System_OPERATING_SYSTEM on SMS_G_System_OPERATING_SYSTEM.ResourceID = SMS_R_System.ResourceId where SMS_G_System_OPERATING_SYSTEM.BuildNumber = "15063" 
+All Windows 10 Aniversary Update (1607)
+select SMS_R_System.ResourceId, SMS_R_System.ResourceType, SMS_R_System.Name, SMS_R_System.SMSUniqueIdentifier, SMS_R_System.ResourceDomainORWorkgroup, SMS_R_System.Client from  SMS_R_System inner join SMS_G_System_OPERATING_SYSTEM on SMS_G_System_OPERATING_SYSTEM.ResourceID = SMS_R_System.ResourceId where SMS_G_System_OPERATING_SYSTEM.BuildNumber = "14393"
+All Windows 10 November Update (1511)
+select SMS_R_System.ResourceId, SMS_R_System.ResourceType, SMS_R_System.Name, SMS_R_System.SMSUniqueIdentifier, SMS_R_System.ResourceDomainORWorkgroup, SMS_R_System.Client from  SMS_R_System inner join SMS_G_System_OPERATING_SYSTEM on SMS_G_System_OPERATING_SYSTEM.ResourceID = SMS_R_System.ResourceId where SMS_G_System_OPERATING_SYSTEM.BuildNumber = "10586"
+All Windows 10 RTM (1507)
+select SMS_R_System.ResourceId, SMS_R_System.ResourceType, SMS_R_System.Name, SMS_R_System.SMSUniqueIdentifier, SMS_R_System.ResourceDomainORWorkgroup, SMS_R_System.Client from  SMS_R_System inner join SMS_G_System_OPERATING_SYSTEM on SMS_G_System_OPERATING_SYSTEM.ResourceID = SMS_R_System.ResourceId where SMS_G_System_OPERATING_SYSTEM.BuildNumber = "10240"
+All Windows 8.1
+select SMS_R_SYSTEM.ResourceID, SMS_R_SYSTEM.ResourceType, SMS_R_SYSTEM.Name, SMS_R_SYSTEM.SMSUniqueIdentifier,
+SMS_R_SYSTEM.ResourceDomainORWorkgroup, SMS_R_SYSTEM.Client from SMS_R_System
+where SMS_R_System.OperatingSystemNameandVersion like "select SMS_R_SYSTEM.ResourceID, SMS_R_SYSTEM.ResourceType, SMS_R_SYSTEM.Name, SMS_R_SYSTEM.SMSUniqueIdentifier,
+SMS_R_SYSTEM.ResourceDomainORWorkgroup, SMS_R_SYSTEM.Client from SMS_R_System
+where SMS_R_System.OperatingSystemNameandVersion like "Microsoft Windows NT Workstation 6.3%"
+All Windows 7
+This query need to be limited to the All Workstations collection to work.
+
+select SMS_R_SYSTEM.ResourceID, SMS_R_SYSTEM.ResourceType, SMS_R_SYSTEM.Name, SMS_R_SYSTEM.SMSUniqueIdentifier,
+SMS_R_SYSTEM.ResourceDomainORWorkgroup, SMS_R_SYSTEM.Client from SMS_R_System
+where SMS_R_System.OperatingSystemNameandVersion like "Microsoft Windows NT Workstation 6.1%"
+All Windows Vista
+This query need to be limited to the All Workstations collection to work
+
+select SMS_R_SYSTEM.ResourceID, SMS_R_SYSTEM.ResourceType, SMS_R_SYSTEM.Name, SMS_R_SYSTEM.SMSUniqueIdentifier,
+SMS_R_SYSTEM.ResourceDomainORWorkgroup, SMS_R_SYSTEM.Client from SMS_R_System
+where SMS_R_System.OperatingSystemNameandVersion like "Microsoft Windows NT Workstation 6.0%"
+All Linux
+Select SMS_R_System.ClientEdition from SMS_R_System where SMS_R_System.ClientEdition = 13
+All Mac OS
+select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,
+SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client
+from SMS_R_System where SMS_R_System.OperatingSystemNameandVersion like "Mac%"
+Based on the computer manufacturer model.
+In this example we get all Dell workstations.
+
+select distinct SMS_G_System_COMPUTER_SYSTEM.Manufacturer, SMS_G_System_COMPUTER_SYSTEM.Model
+from SMS_R_System inner join SMS_G_System_COMPUTER_SYSTEM on SMS_G_System_COMPUTER_SYSTEM.ResourceID = SMS_R_System.ResourceId
+where SMS_G_System_COMPUTER_SYSTEM.Model = "Dell"
+Server Collections
+All Domain Controllers
+This query requires that the SCCM client is installed and hardware inventory is turned on.
+
+select *  from  SMS_R_System inner join SMS_G_System_COMPUTER_SYSTEM on SMS_G_System_COMPUTER_SYSTEM.ResourceId = SMS_R_System.ResourceId
+where SMS_G_System_COMPUTER_SYSTEM.Roles like "%Domain_Controller%"
+All Servers
+select SMS_R_SYSTEM.ResourceID, SMS_R_SYSTEM.ResourceType, SMS_R_SYSTEM.Name, SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_System.OperatingSystemNameandVersion,
+SMS_R_SYSTEM.ResourceDomainORWorkgroup, SMS_R_SYSTEM.Client
+from SMS_R_System where SMS_R_System.OperatingSystemNameandVersion like "Microsoft Windows NT Server%"
+OR SMS_R_System.OperatingSystemNameandVersion like "Microsoft Windows NT Advanced Server%"
+All Windows 2019 Servers
+select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System inner join SMS_G_System_OPERATING_SYSTEM on SMS_G_System_OPERATING_SYSTEM.ResourceID = SMS_R_System.ResourceId where SMS_G_System_OPERATING_SYSTEM.Name like "Microsoft Windows Server 2019 %"
+All Windows 2016 Servers
+select SMS_R_SYSTEM.ResourceID, SMS_R_SYSTEM.ResourceType, SMS_R_SYSTEM.Name, SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_System.OperatingSystemNameandVersion,
+SMS_R_SYSTEM.ResourceDomainORWorkgroup, SMS_R_SYSTEM.Client
+from SMS_R_System where SMS_R_System.OperatingSystemNameandVersion like "Microsoft Windows NT Server 10.0%"
+OR SMS_R_System.OperatingSystemNameandVersion like "Microsoft Windows NT Advanced Server 10.0%"
+All Windows 2012 R2 Servers
+select SMS_R_SYSTEM.ResourceID, SMS_R_SYSTEM.ResourceType, SMS_R_SYSTEM.Name, SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_System.OperatingSystemNameandVersion,
+SMS_R_SYSTEM.ResourceDomainORWorkgroup, SMS_R_SYSTEM.Client
+from SMS_R_System where SMS_R_System.OperatingSystemNameandVersion like "Microsoft Windows NT Server 6.3%"
+OR SMS_R_System.OperatingSystemNameandVersion like "Microsoft Windows NT Advanced Server 6.3%"
+All Windows 2012 Servers
+select SMS_R_SYSTEM.ResourceID, SMS_R_SYSTEM.ResourceType, SMS_R_SYSTEM.Name, SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_System.OperatingSystemNameandVersion,
+SMS_R_SYSTEM.ResourceDomainORWorkgroup, SMS_R_SYSTEM.Client
+from SMS_R_System where SMS_R_System.OperatingSystemNameandVersion like "Microsoft Windows NT Server 6.2%"
+OR SMS_R_System.OperatingSystemNameandVersion like "Microsoft Windows NT Advanced Server 6.2%"
+All Windows 2008 R2 Servers
+select SMS_R_SYSTEM.ResourceID, SMS_R_SYSTEM.ResourceType, SMS_R_SYSTEM.Name, SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_System.OperatingSystemNameandVersion,
+SMS_R_SYSTEM.ResourceDomainORWorkgroup, SMS_R_SYSTEM.Client
+from SMS_R_System where SMS_R_System.OperatingSystemNameandVersion like "Microsoft Windows NT Server 6.1%"
+OR SMS_R_System.OperatingSystemNameandVersion like "Microsoft Windows NT Advanced Server 6.1%"
+All Windows 2008 Servers
+select SMS_R_SYSTEM.ResourceID, SMS_R_SYSTEM.ResourceType, SMS_R_SYSTEM.Name, SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_System.OperatingSystemNameandVersion,
+SMS_R_SYSTEM.ResourceDomainORWorkgroup, SMS_R_SYSTEM.Client
+from SMS_R_System where SMS_R_System.OperatingSystemNameandVersion like "Microsoft Windows NT Server 6.0%"
+OR SMS_R_System.OperatingSystemNameandVersion like "Microsoft Windows NT Advanced Server 6.0%"
+SQL Server Collections
+All SQL Servers
+select *  from  SMS_R_System inner join SMS_G_System_COMPUTER_SYSTEM on SMS_G_System_COMPUTER_SYSTEM.ResourceID = SMS_R_System.ResourceId
+where SMS_G_System_COMPUTER_SYSTEM.Roles like "%SQLServer%"
+All SQL Server Management Studio installed
+select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System inner join SMS_G_System_INSTALLED_SOFTWARE on SMS_G_System_INSTALLED_SOFTWARE.ResourceID = SMS_R_System.ResourceId where SMS_G_System_INSTALLED_SOFTWARE.ProductName like "Microsoft SQL Server Management Studio %"
+All SQL Server Management Studio v17 installed
+select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System inner join SMS_G_System_INSTALLED_SOFTWARE on SMS_G_System_INSTALLED_SOFTWARE.ResourceID = SMS_R_System.ResourceId where SMS_G_System_INSTALLED_SOFTWARE.ProductName like "Microsoft SQL Server Management Studio - 17%"
+All SQL Servers 2017
+select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System inner join SMS_G_System_INSTALLED_SOFTWARE on SMS_G_System_INSTALLED_SOFTWARE.ResourceId = SMS_R_System.ResourceId where SMS_G_System_INSTALLED_SOFTWARE.ProductName = "Microsoft SQL Server 2017"
+All SQL Servers 2016
+select SMS_R_System.ResourceId, SMS_R_System.ResourceType,
+SMS_R_System.Name, SMS_R_System.SMSUniqueIdentifier, SMS_R_System.ResourceDomainORWorkgroup,
+SMS_R_System.Client from  SMS_R_System inner join SMS_G_System_INSTALLED_SOFTWARE on SMS_G_System_INSTALLED_SOFTWARE.ResourceID = SMS_R_System.ResourceId
+where SMS_G_System_INSTALLED_SOFTWARE.ProductName like "Microsoft SQL Server 2016"
+All SQL Servers 2014 (x64)
+select SMS_R_System.ResourceId, SMS_R_System.ResourceType,
+SMS_R_System.Name, SMS_R_System.SMSUniqueIdentifier, SMS_R_System.ResourceDomainORWorkgroup,
+SMS_R_System.Client from  SMS_R_System inner join SMS_G_System_INSTALLED_SOFTWARE on SMS_G_System_INSTALLED_SOFTWARE.ResourceID = SMS_R_System.ResourceId
+where SMS_G_System_INSTALLED_SOFTWARE.ProductName like "Microsoft SQL Server 2014 (64-%"
+All SQL Servers 2012 (x64)
+select SMS_R_System.ResourceId, SMS_R_System.ResourceType,
+SMS_R_System.Name, SMS_R_System.SMSUniqueIdentifier, SMS_R_System.ResourceDomainORWorkgroup,
+SMS_R_System.Client from  SMS_R_System inner join SMS_G_System_INSTALLED_SOFTWARE on SMS_G_System_INSTALLED_SOFTWARE.ResourceID = SMS_R_System.ResourceId
+where SMS_G_System_INSTALLED_SOFTWARE.ProductName like "Microsoft SQL Server 2012 (64-%"
+Network Collections
+Based on IP subnet
+SELECT SMS_R_SYSTEM.ResourceID, SMS_R_SYSTEM.ResourceType, SMS_R_SYSTEM.Name, SMS_R_SYSTEM.SMSUniqueIdentifier,
+SMS_R_SYSTEM.ResourceDomainORWorkgroup, SMS_R_SYSTEM.Client
+FROM SMS_R_System WHERE SMS_R_System.IPSubnets LIKE '192.168.1[1-9].0'
+Based on IP range
+select *
+from SMS_R_System
+where SMS_R_System.IPAddresses like "10.10.10.2[1-9]"
+ All Physical Systems
+select SMS_R_System.ResourceId, SMS_R_System.ResourceType, SMS_R_System.Name, SMS_R_System.SMSUniqueIdentifier, SMS_R_System.OperatingSystemNameandVersion, SMS_R_System.ResourceDomainORWorkgroup, SMS_R_System.Client from  SMS_R_System where SMS_R_System.IsVirtualMachine like "False"
+ All Virtual Systems
+select SMS_R_System.ResourceId, SMS_R_System.ResourceType, SMS_R_System.Name, SMS_R_System.SMSUniqueIdentifier, SMS_R_System.OperatingSystemNameandVersion, SMS_R_System.ResourceDomainORWorkgroup, SMS_R_System.Client from  SMS_R_System where SMS_R_System.IsVirtualMachine like "True"
+Installed Software Collections
+All Office 365 Pro Plus
+select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System inner join SMS_G_System_INSTALLED_SOFTWARE on SMS_G_System_INSTALLED_SOFTWARE.ResourceID = SMS_R_System.ResourceId where SMS_G_System_INSTALLED_SOFTWARE.ProductName like "Microsoft Office 365 ProPlus %"
+All Office 365 Pro Plus 2016 (Office 365 Pro Plus)
+select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System inner join SMS_G_System_INSTALLED_SOFTWARE on SMS_G_System_INSTALLED_SOFTWARE.ResourceId = SMS_R_System.ResourceId where SMS_G_System_INSTALLED_SOFTWARE.ProductName like "Microsoft Office 365 ProPlus - %" and SMS_G_System_INSTALLED_SOFTWARE.ProductVersion like "16.%"
+All Office 365 Pro Plus 2013
+select SMS_R_SYSTEM.ResourceID,SMS_R_SYSTEM.ResourceType,SMS_R_SYSTEM.Name,SMS_R_SYSTEM.SMSUniqueIdentifier,SMS_R_SYSTEM.ResourceDomainORWorkgroup,SMS_R_SYSTEM.Client from SMS_R_System inner join SMS_G_System_INSTALLED_SOFTWARE on SMS_G_System_INSTALLED_SOFTWARE.ResourceId = SMS_R_System.ResourceId where SMS_G_System_INSTALLED_SOFTWARE.ProductName like "Microsoft Office 365 ProPlus - %" and SMS_G_System_INSTALLED_SOFTWARE.ProductVersion like "15.0.%"
+Primary user on device
+ SELECT SMS_R_System.name, SMS_R_User.UniqueUserName
+  FROM SMS_R_System
+  INNER JOIN SMS_UserMachineRelationship ON SMS_UserMachineRelationship.ResourceId = SMS_R_System.ResourceId
+  JOIN SMS_R_User ON SMS_UserMachineRelationship.UniqueUserName = SMS_R_User.UniqueUserName
+  WHERE
+   SMS_UserMachineRelationship.Types = 1 
