@@ -1,0 +1,469 @@
+--WARNING! ERRORS ENCOUNTERED DURING SQL PARSING!
+1. SQL Script
+FOR checking site SERVER STATUS
+
+SELECT V_Site.servername AS [SERVER NAME]
+	,V_SummarizerSiteStatus.SiteCode [SITE CODE]
+	,'STATUS' = CASE 
+		WHEN V_SummarizerSiteStatus.STATUS = 0
+			THEN 'OK'
+		WHEN V_SummarizerSiteStatus.STATUS = 1
+			THEN 'WARNING'
+		WHEN V_SummarizerSiteStatus.STATUS = 2
+			THEN 'CRITICAL'
+		ELSE ' '
+		END
+	,Updated 'TIME'
+FROM V_SummarizerSiteStatus
+INNER JOIN V_site ON V_SummarizerSiteStatus.Sitecode = V_Site.Sitecode
+ORDER BY V_SummarizerSiteStatus.Sitecode 2 ) Accenture Servers & Brands
+
+SELECT Manufacturer0 AS Manufacturer
+	,Model0 AS Model
+	,COUNT(Model0) AS Count
+FROM v_GS_COMPUTER_SYSTEM
+GROUP BY Model0
+	,Manufacturer0
+ORDER BY Manufacturer0
+	,Model0 3 ) Advertisement STATUS OF a particular machine
+
+SELECT DISTINCT v_R_System.Name0 AS [System Name]
+	,v_R_System.User_Name0 AS [User Name]
+	,vSMS_ClientAdvertisementStatus.AdvertisementID AS [Advertisemnt ID]
+	,vSMS_ClientAdvertisementStatus.LastStatusMessageIDName AS [Last Status Message]
+	,vSMS_ClientAdvertisementStatus.LastStateName AS [Last Status]
+FROM vSMS_ClientAdvertisementStatus
+INNER JOIN v_R_System ON vSMS_ClientAdvertisementStatus.ResourceID = v_R_System.ResourceID
+INNER JOIN v_RA_System_SMSAssignedSites ON v_R_System.ResourceID = v_RA_System_SMSAssignedSites.ResourceID
+WHERE (vSMS_ClientAdvertisementStatus.AdvertisementID IN ('ACN20D7A'))
+	AND (
+		vSMS_ClientAdvertisementStatus.LastStateName IN (
+			'Waiting'
+			,'Accepted - No Further Status'
+			,'Failed'
+			,'No Status'
+			,'Retrying'
+			,'Will Not Rerun'
+			,'Succeeded'
+			,'Reboot Pending'
+			)
+		)
+	AND (v_RA_System_SMSAssignedSites.SMS_Assigned_Sites0 NOT IN ('CTC'))
+	AND (v_R_System.Active0 = 1)
+	AND (v_R_System.Name0 IN ('MADADRDV1'))
+ORDER BY [System Name] 4 ) Client ALL Configuration Details
+
+SELECT v_R_System.Name0 AS [SERVER NAME]
+	,v_R_System.AD_Site_Name0 AS [ACTIVE DIRECTOY SITE]
+	,v_RA_System_SMSAssignedSites.SMS_Assigned_Sites0 AS [SCCM SITE CODE]
+	,v_GS_WORKSTATION_STATUS.LastHWScan AS [LAST HW SCAN DATE]
+	,v_UpdateScanStatus.LastScanTime AS [LAST WSUS SCAN TIME]
+	,v_UpdateScanStatus.LastScanPackageLocation AS [WSUS SERVER INITIATED SCAN]
+	,CONVERT(VARCHAR(10), v_AgentDiscoveries.AgentTime, 101) AS [LAST CLIENT REGISTRATION TIME]
+	,v_AgentDiscoveries.AgentSite AS [HEARTBEAT TO]
+	,v_AgentDiscoveries.AgentName AS [AGENT NAME]
+FROM v_R_System
+INNER JOIN v_RA_System_SMSAssignedSites ON v_R_System.ResourceID = v_RA_System_SMSAssignedSites.ResourceID
+INNER JOIN v_GS_WORKSTATION_STATUS ON v_R_System.ResourceID = v_GS_WORKSTATION_STATUS.ResourceID
+INNER JOIN v_UpdateScanStatus ON v_R_System.ResourceID = v_UpdateScanStatus.ResourceID
+INNER JOIN v_AgentDiscoveries ON v_R_System.ResourceID = v_AgentDiscoveries.ResourceId
+WHERE (v_AgentDiscoveries.AgentName IN ('HEARTBEAT DISCOVERY'))
+	AND (
+		v_R_System.ResourceID IN (
+			SELECT ResourceID
+			FROM v_FullCollectionMembership
+			WHERE (
+					CollectionID IN (
+						'ACN00017'
+						,'ACN00015'
+						)
+					)
+			)
+		)
+	AND (v_R_System.AD_Site_Name0 LIKE '%WORKSTATIONS%')
+	AND (
+		v_UpdateScanStatus.LastScanPackageLocation NOT IN (
+			'C:\WINDOWS\SYSWOW64\VPCACHE\ACN00059'
+			,'C:\WINDOWS\SYSTEM32\VPCACHE\ACN00059'
+			)
+		)
+ORDER BY [ACTIVE DIRECTOY SITE] 5 ) New Client Registration Info
+
+SELECT DISTINCT CS.Name0 AS [Machine Name]
+	,CONVERT(VARCHAR(10), AD.AgentTime, 101) AS [Last Client Registration Time]
+	,AD.AgentSite
+	,AD.AgentName AS [Agent Name]
+FROM v_R_System AS CS
+INNER JOIN v_AgentDiscoveries AS AD ON CS.ResourceID = AD.ResourceId
+WHERE (
+		AD.AgentName IN (
+			'MP_ClientRegistration'
+			,'Heartbeat Discovery'
+			)
+		)
+	AND CS.Name0 IN (‘Machine name’)
+ORDER BY [Machine Name] 6 ) COLLECTION WISE patch compliance STATUS (ITMU)
+
+DECLARE @P1 AS CHAR(8)
+	,@P2 AS CHAR(8)
+	,@collid AS CHAR
+
+SET @P1 = 'MS09-019'
+SET @P2 = 'MS09-020'
+SET @collid = 'Collection ID'
+
+SELECT DISTINCT v_R_System.ResourceID
+	,v_R_System.Name0 AS ComputerName
+	,v_GS_PATCHSTATEEX.ID0 AS [Bullettin ID]
+	,v_GS_PATCHSTATEEX.QNumbers0 AS QNumber
+	,v_GS_PATCHSTATEEX.Status0 AS STATUS
+	,v_GS_PATCHSTATEEX.Title0 AS UpdateName
+FROM v_GS_PATCHSTATEEX
+INNER JOIN v_R_System ON v_GS_PATCHSTATEEX.ResourceID = v_R_System.ResourceID
+INNER JOIN v_FullCollectionMembership ON v_R_System.ResourceID = v_FullCollectionMembership.ResourceID
+WHERE (
+		v_GS_PATCHSTATEEX.ID0 IN (
+			@p1
+			,@p2
+			)
+		)
+	AND (
+		v_GS_PATCHSTATEEX.QNumbers0 IN (
+			'960859'
+			,'961501'
+			,'967723'
+			,'971657'
+			,'973815'
+			,'956844'
+			,'968537'
+			,'968816'
+			,'970483'
+			,'971032'
+			,'971557'
+			,'971633'
+			,'973346'
+			,'973540'
+			,'973869'
+			,'956744'
+			,'958471'
+			,'970238'
+			,'972260'
+			,'972554'
+			,'973507'
+			,'958469'
+			,'958470'
+			,'961371'
+			,'971961'
+			,'973354'
+			)
+		)
+	AND (v_GS_PATCHSTATEEX.Status0 = 'Installed')
+	AND (v_FullCollectionMembership.CollectionID = @collid) 7 ) Duplicate Machines
+
+SELECT name0
+FROM V_r_system
+GROUP BY name0
+HAVING COUNT(*) > 1 8 ) Query
+FOR pulling OUT the report
+FOR mchines NOT
+HAVING Free DISK Space less than 500 MB IN
+
+C: \
+
+SELECT DISTINCT SYS.Name AS [System Name]
+	,SYS.SiteCode
+	,HardDisk.Description0
+	,HardDisk.DeviceID0 AS Drive
+	,HardDisk.VolumeName0 AS VolumeName
+	,HardDisk.FileSystem0 AS FileSystem
+	,HardDisk.Size0 AS TotalSize
+	,HardDisk.FreeSpace0 AS FreeSpace
+FROM v_FullCollectionMembership AS SYS
+INNER JOIN v_GS_LOGICAL_DISK AS HardDisk ON SYS.ResourceID = HardDisk.ResourceID
+INNER JOIN v_RA_System_IPAddresses ON SYS.ResourceID = v_RA_System_IPAddresses.ResourceID
+WHERE (HardDisk.DriveType0 = 3)
+	AND (HardDisk.FreeSpace0 <= 500)
+	AND (HardDisk.DeviceID0 IN ('C:'))
+	AND (SYS.SiteCode NOT IN ('CTC')) 9 ) Installed & Applicable Patch compliance report OF a machine ITMU Ready
+
+SELECT DISTINCT v_R_System.ResourceID
+	,v_R_System.Name0 AS ComputerName
+	,v_GS_PATCHSTATEEX.ID0 AS [Bullettin ID]
+	,v_GS_PATCHSTATEEX.QNumbers0 AS QNumber
+	,v_GS_PATCHSTATEEX.Status0 AS STATUS
+	,v_GS_PATCHSTATEEX.Title0 AS UpdateName
+FROM v_GS_PATCHSTATEEX
+INNER JOIN v_R_System ON v_GS_PATCHSTATEEX.ResourceID = v_R_System.ResourceID
+INNER JOIN v_FullCollectionMembership ON v_R_System.ResourceID = v_FullCollectionMembership.ResourceID
+WHERE (
+		v_GS_PATCHSTATEEX.Status0 IN (
+			'Installed'
+			,'Applicable'
+			)
+		)
+	AND (v_R_System.Name0 IN ('MADAP1451'))
+ORDER BY ComputerName 10 ) Last HW & SW Inventory report
+WITH DATE difference
+
+SELECT DISTINCT V_R_SYSTEM.RESOURCEID AS 'MACHINE ID'
+	,V_R_SYSTEM.NETBIOS_NAME0 AS 'MACHINE NAME'
+	,V_RA_SYSTEM_SMSASSIGNEDSITES.SMS_ASSIGNED_SITES0 AS [SITE CODE]
+	,V_AGENTDISCOVERIES.AGENTTIME AS 'LAST HEARTBEAT DISCOVERY TIME'
+	,V_GS_WORKSTATION_STATUS.LASTHWSCAN AS 'LAST HARDWARE SCAN DATE'
+	,V_GS_LASTSOFTWARESCAN.LASTSCANDATE AS 'LAST SOFTWARE SCAN DATE'
+	,DATEDIFF(D, V_GS_WORKSTATION_STATUS.LASTHWSCAN, GETDATE()) AS [HW SCAN DIFFERENCE]
+	,DATEDIFF(D, V_GS_LASTSOFTWARESCAN.LASTSCANDATE, GETDATE()) AS [SW SCAN DIFFERENCE]
+FROM V_R_SYSTEM
+INNER JOIN V_AGENTDISCOVERIES ON V_R_SYSTEM.RESOURCEID = V_AGENTDISCOVERIES.RESOURCEID
+	AND V_AGENTDISCOVERIES.AGENTNAME = 'HEARTBEAT DISCOVERY'
+INNER JOIN V_RA_SYSTEM_SMSASSIGNEDSITES ON V_R_SYSTEM.RESOURCEID = V_RA_SYSTEM_SMSASSIGNEDSITES.RESOURCEID
+LEFT JOIN V_GS_WORKSTATION_STATUS ON V_R_SYSTEM.RESOURCEID = V_GS_WORKSTATION_STATUS.RESOURCEID
+LEFT JOIN V_GS_LASTSOFTWARESCAN ON V_R_SYSTEM.RESOURCEID = V_GS_LASTSOFTWARESCAN.RESOURCEID
+WHERE V_RA_SYSTEM_SMSASSIGNEDSITES.SMS_ASSIGNED_SITES0 NOT IN ('CTC')
+ORDER BY V_RA_SYSTEM_SMSASSIGNEDSITES.SMS_ASSIGNED_SITES0 11 ) Last HW & SW Inventory report
+WITH DATE difference
+FOR a particular machine
+
+SELECT DISTINCT V_R_SYSTEM.RESOURCEID AS 'MACHINE ID'
+	,V_R_SYSTEM.NETBIOS_NAME0 AS 'MACHINE NAME'
+	,V_R_SYSTEM.USER_NAME0 AS 'LAST LOGON USERNAME'
+	,V_AGENTDISCOVERIES.AGENTTIME AS 'LAST HEARTBEAT DISCOVERY TIME'
+	,V_GS_WORKSTATION_STATUS.LASTHWSCAN AS 'LAST HARDWARE SCAN DATE'
+	,V_GS_LASTSOFTWARESCAN.LASTSCANDATE AS 'LAST SOFTWARE SCAN DATE'
+	,DATEDIFF(D, V_GS_WORKSTATION_STATUS.LASTHWSCAN, GETDATE()) AS [DAY SINCE]
+FROM V_R_SYSTEM
+JOIN V_AGENTDISCOVERIES ON V_R_SYSTEM.RESOURCEID = V_AGENTDISCOVERIES.RESOURCEID
+	AND V_AGENTDISCOVERIES.AGENTNAME = 'HEARTBEAT DISCOVERY'
+LEFT JOIN V_GS_WORKSTATION_STATUS ON V_R_SYSTEM.RESOURCEID = V_GS_WORKSTATION_STATUS.RESOURCEID
+LEFT JOIN V_GS_LASTSOFTWARESCAN ON V_R_SYSTEM.RESOURCEID = V_GS_LASTSOFTWARESCAN.RESOURCEID
+WHERE V_R_SYSTEM.NETBIOS_NAME0 IN ('MADVA1055')
+ORDER BY V_GS_WORKSTATION_STATUS.LASTHWSCAN 12 ) Count machines falling\Reporting under a Particular Active Directory Site
+
+SELECT AD_SITE_NAME0 AS [AD SITE]
+	,COUNT(AD_SITE_NAME0) AS COUNT
+FROM V_R_System
+GROUP BY AD_SITE_NAME0 13 ) SCCM Site code info OF a particular Machine
+
+SELECT DISTINCT v_R_System.ResourceID AS ID
+	,v_R_System.Active0 AS Active
+	,v_R_System.Client0 AS Client
+	,v_R_System.Client_Type0 AS [Client Type]
+	,v_R_System.Name0 AS [Machine Name]
+	,v_RA_System_SMSAssignedSites.SMS_Assigned_Sites0 AS [Assigned to Site]
+FROM v_R_System
+INNER JOIN v_RA_System_SMSAssignedSites ON v_R_System.ResourceID = v_RA_System_SMSAssignedSites.ResourceID
+	AND v_R_System.Name0 IN ('BG6DS0613')
+	AND v_R_System.Active0 = 1 14 ) Machines Installed
+WITH a specfic Software(ADD & Remove Program Based)
+
+SELECT V_R_SYSTEM.RESOURCEID
+	,V_R_SYSTEM.NAME0
+FROM V_R_SYSTEM
+	,V_FULLCOLLECTIONMEMBERSHIP
+WHERE V_R_SYSTEM.RESOURCEID IN (
+		SELECT V_ADD_REMOVE_PROGRAMS.RESOURCEID
+		FROM V_ADD_REMOVE_PROGRAMS
+		INNER JOIN V_R_SYSTEM ON V_ADD_REMOVE_PROGRAMS.RESOURCEID = V_R_SYSTEM.RESOURCEID
+		WHERE V_ADD_REMOVE_PROGRAMS.DISPLAYNAME0 = 'START'
+		)
+	AND V_R_SYSTEM.RESOURCEID = V_FULLCOLLECTIONMEMBERSHIP.RESOURCEID
+	AND V_R_SYSTEM.ACTIVE0 = 1
+	AND V_FULLCOLLECTIONMEMBERSHIP.COLLECTIONID IN (
+		'Collectionid1'
+		,' Collectionid2..'
+		) 15 ) Machines NOT Installed
+WITH a specfic Software(ADD & Remove Program Based)
+
+SELECT V_R_SYSTEM.RESOURCEID
+	,V_R_SYSTEM.NAME0
+FROM V_R_SYSTEM
+	,V_FULLCOLLECTIONMEMBERSHIP
+WHERE V_R_SYSTEM.RESOURCEID NOT IN (
+		SELECT V_ADD_REMOVE_PROGRAMS.RESOURCEID
+		FROM V_ADD_REMOVE_PROGRAMS
+		INNER JOIN V_R_SYSTEM ON V_ADD_REMOVE_PROGRAMS.RESOURCEID = V_R_SYSTEM.RESOURCEID
+		WHERE V_ADD_REMOVE_PROGRAMS.DISPLAYNAME0 = 'START'
+		)
+	AND V_R_SYSTEM.RESOURCEID = V_FULLCOLLECTIONMEMBERSHIP.RESOURCEID
+	AND V_R_SYSTEM.ACTIVE0 = 1
+	AND V_FULLCOLLECTIONMEMBERSHIP.COLLECTIONID IN (
+		'Collectionid1'
+		,' Collectionid2..'
+		) 16 ) Query
+FOR retriving a particular machines COLLECTION membership Information
+
+SELECT V_FULLCOLLECTIONMEMBERSHIP.COLLECTIONID AS COLLECTIONID
+	,V_COLLECTION.NAME AS COLLECTIONNAME
+	,V_FULLCOLLECTIONMEMBERSHIP.NAME AS MACHINENAME
+	,V_FULLCOLLECTIONMEMBERSHIP.DOMAIN AS [DOMAIN\WORKGROUP]
+	,V_FULLCOLLECTIONMEMBERSHIP.SITECODE AS SITECODE
+	,V_FULLCOLLECTIONMEMBERSHIP.ISCLIENT AS ISCLIENT
+	,V_FULLCOLLECTIONMEMBERSHIP.ISOBSOLETE AS ISOBSOLETE
+FROM V_FULLCOLLECTIONMEMBERSHIP
+	,V_COLLECTION
+WHERE V_FULLCOLLECTIONMEMBERSHIP.NAME IN ('Machine Name1')
+	AND V_FULLCOLLECTIONMEMBERSHIP.COLLECTIONID = V_COLLECTION.COLLECTIONID 17 ) Query
+FOR checking wheather a particular machines part OF specfied COLLECTION
+	OR NOT.
+
+SELECT V_FULLCOLLECTIONMEMBERSHIP.COLLECTIONID AS COLLECTIONID
+	,V_COLLECTION.NAME AS COLLECTIONNAME
+	,V_FULLCOLLECTIONMEMBERSHIP.NAME AS MACHINENAME
+	,V_FULLCOLLECTIONMEMBERSHIP.DOMAIN AS [DOMAIN\WORKGROUP]
+	,V_FULLCOLLECTIONMEMBERSHIP.SITECODE AS SITECODE
+	,V_FULLCOLLECTIONMEMBERSHIP.ISCLIENT AS ISCLIENT
+	,V_FULLCOLLECTIONMEMBERSHIP.ISOBSOLETE AS ISOBSOLETE
+FROM V_FULLCOLLECTIONMEMBERSHIP
+	,V_COLLECTION
+WHERE V_FULLCOLLECTIONMEMBERSHIP.NAME IN ('Machine Name1')
+	AND V_FULLCOLLECTIONMEMBERSHIP.COLLECTIONID IN (
+		Collectionid1 ',Collectionid2)  AND  
+V_FULLCOLLECTIONMEMBERSHIP.COLLECTIONID =V_COLLECTION.COLLECTIONID
+
+
+18) Query for Retriving SCCM Site server roles configured in a particular Server.
+
+SELECT DISTINCT
+v_RA_System_SystemRoles.Resourceid AS [RESOURCE ID],
+v_R_System.Name0 AS [SERVER NAME],
+v_RA_System_SystemRoles.System_roles0 AS [SCCM SERVER ROLES]
+FROM v_RA_System_SystemRoles INNER JOIN v_R_System
+ON
+v_RA_System_SystemRoles.Resourceid=v_R_System.Resourceid
+and v_R_System.Name0 IN(' site SERVER name ')
+
+19) SUP patch status of a particular machine(Installed,Applicable)
+
+SELECT DISTINCT(Name0) AS [Server Name],
+UCS.Status AS [Patch Status Code],
+CASE 
+WHEN UCS.Status=' 2 ' THEN ' Applicable '
+WHEN UCS.Status=' 3 ' THEN ' Installed '
+ELSE '' END AS ' Patch STATUS 
+		',
+UI.BulletinID AS [Bulletin ID],
+UI.Articleid AS [Article ID],
+UI.Title AS [Title],
+UI.Description AS [Description]
+FROM v_R_System SYS
+LEFT JOIN v_Update_ComplianceStatusAll UCS ON SYS.ResourceID=UCS.ResourceID
+INNER JOIN v_UpdateInfo UI ON UCS.CI_ID=UI.CI_ID
+WHERE UCS.Status in(' 2 ',' 3 ')  and SYS.Name0 IN
+(' Machine name1 ',' machine name2 
+		')
+ORDER BY UCS.Status
+
+20)Query for retriving list of machines SCCM WSUS Scan tool Completed with errors 
+
+SELECT DISTINCT 
+                      v_UpdateScanStatus.ResourceID AS [Resource ID], v_R_System.Name0 AS [Machine Name], v_UpdateScanStatus.LastScanTime AS [Last Scan Time], 
+                      v_UpdateScanStatus.LastStatusMessageID AS [Last Status Message ID], v_UpdateScanStatus.LastErrorCode AS [Last Error Code], 
+                      v_UpdateScanStatus.LastScanPackageLocation AS [WSUS server Initiated Scan]
+FROM         v_UpdateScanStatus INNER JOIN
+                      v_R_System ON v_UpdateScanStatus.ResourceID = v_R_System.ResourceID AND 
+                      v_UpdateScanStatus.LastScanPackageLocation NOT IN (' C: \WINDOWS\SysWOW64\VPCache\ACN00059 ', 
+                      ' C: \WINDOWS\system32\VPCache\ACN00059 ', ' C: \WINNT\system32\VPCache\ACN00059 
+		') AND v_UpdateScanStatus.LastErrorCode NOT IN (0) 
+AND v_R_System.Name0 IN
+                          (SELECT     Name
+                            FROM          v_FullCollectionMembership
+                            WHERE      (CollectionID IN (' COLLECTION Name ', ' COLLECTION Name1 ')))
+
+21) SCCM Patch Compliance report 
+
+DECLARE @P1 AS CHAR(8), @P2 AS CHAR(8),@P3 AS CHAR(8), @P4 AS CHAR(8),@P5 AS CHAR(8), @P6 AS CHAR(8),@P7 AS CHAR(8), @P8 AS CHAR(8)
+SET @P1 = ' 972270 '
+SET @P2 = ' 974392 '
+SET @P3 = ' 973904 '
+SET @P4 = ' 971961 '
+SET @P5 = ' 969947 '
+SET @P6 = ' 953300 '
+SET @P7 = ' 974417 '
+SET @P8 = ' 973525 '
+SELECT  SYS.Name0 AS [Machine Name],CSAS.SMS_Assigned_Sites0 AS [Site Code],SUM(CASE 
+
+WHEN VUI.ArticleID=@P1 AND VUCS.Status=' 2 ' THEN 2
+WHEN VUI.ArticleID=@P1 AND VUCS.Status=' 3 ' THEN 3
+ELSE '' END) AS ' KB972270 ',SUM(CASE 
+
+WHEN VUI.ArticleID=@P2 AND VUCS.Status=' 2 ' THEN 2
+WHEN VUI.ArticleID=@P2 AND VUCS.Status=' 3 ' THEN 3
+ELSE '' END) AS ' KB974392 
+		',SUM(CASE 
+
+WHEN VUI.ArticleID=@P3 AND VUCS.Status=' 2 ' THEN 2
+WHEN VUI.ArticleID=@P3 AND VUCS.Status=' 3 ' THEN 3
+ELSE '' END) AS ' KB973904 ',SUM(CASE 
+
+WHEN VUI.ArticleID=@P4 AND VUCS.Status=' 2 ' THEN 2
+WHEN VUI.ArticleID=@P4 AND VUCS.Status=' 3 ' THEN 3
+ELSE '' END) AS ' KB971961 ',SUM(CASE 
+
+WHEN VUI.ArticleID=@P5 AND VUCS.Status=' 2 ' THEN 2
+WHEN VUI.ArticleID=@P5 AND VUCS.Status=' 3 ' THEN 3
+ELSE '' END) AS ' KB969947 ',SUM(CASE 
+WHEN VUI.ArticleID=@P6 AND VUCS.Status=' 2 ' THEN 2
+WHEN VUI.ArticleID=@P6 AND VUCS.Status=' 3 ' THEN 3
+ELSE '' END) AS ' KB953300 ',SUM(CASE 
+WHEN VUI.ArticleID=@P7 AND VUCS.Status=' 2 ' THEN 2
+WHEN VUI.ArticleID=@P7 AND VUCS.Status=' 3 ' THEN 3
+ELSE '' END) AS ' KB974417 ',SUM(CASE 
+WHEN VUI.ArticleID=@P8 AND VUCS.Status=' 2 ' THEN 2
+WHEN VUI.ArticleID=@P8 AND VUCS.Status=' 3 ' THEN 3
+ELSE '' END) AS ' KB973525 
+		'
+FROM v_Update_ComplianceStatusAll VUCS
+INNER JOIN v_UpdateInfo VUI ON VUI.CI_ID=VUCS.CI_ID
+INNER JOIN v_R_System SYS ON VUCS.ResourceID=SYS.ResourceID
+INNER JOIN v_RA_System_SMSAssignedSites CSAS on SYS.ResourceID=CSAS.ResourceID
+WHERE VUCS.Status in(2,3) and VUI.ArticleID in(@P1,@P2,@P3,@P4,@P5,@P6,@P7,@P8)
+AND SYS.Name0 IN(SELECT [Name] From v_fullcollectionmembership where collectionid in(' COLLECTION Name ',' COLLECTION Name1 ')) 
+GROUP BY SYS.Name0,CSAS.SMS_Assigned_Sites0
+ORDER BY SYS.Name0
+
+21)  Server Up Time Report Based on Last Boot up Time.
+
+SELECT     v_R_System.ResourceID AS [Machine ID],
+ v_R_System.Name0 AS [Server Name],
+ v_GS_OPERATING_SYSTEM.Caption0 AS [Operating System], 
+v_GS_OPERATING_SYSTEM.LastBootUpTime0 AS [Last Server Boot Up Time], 
+CONVERT(varchar(50), DATEDIFF(mi,v_GS_OPERATING_SYSTEM.LastBootUpTime0, GETDATE()) / 60 / 24) + ' : Days 
+		' + CONVERT(varchar(50), RIGHT(CONVERT(char(3), 100 + DATEDIFF(mi,                     v_GS_OPERATING_SYSTEM.LastBootUpTime0, GETDATE()) % 60), 2)) + ' : Minutes ' AS [Server Up For]
+FROM         v_GS_OPERATING_SYSTEM INNER JOIN
+                      v_R_System ON v_GS_OPERATING_SYSTEM.ResourceID = v_R_System.ResourceID AND v_R_System.Name0 IN (' APAAC1002 ')
+
+22)Last RAM Changed Date
+
+select
+CS.Name0,
+CS.UserName0,
+RAM.TotalPhysicalMemory0,
+RAM.TimeStamp,
+HRAM.TotalPhysicalMemory0,
+Max(HRAM.TimeStamp) As [RAM Changed Date]
+from
+dbo.v_GS_COMPUTER_SYSTEM CS,
+dbo.v_GS_X86_PC_MEMORY RAM,
+dbo.v_HS_X86_PC_MEMORY HRAM
+Where CS.ResourceID = RAM.ResourceID
+and CS.ResourceID = HRAM.ResourceID
+and RAM.TotalPhysicalMemory0 != HRAM.TotalPhysicalMemory0
+Group by
+CS.Name0,
+CS.UserName0,
+RAM.TotalPhysicalMemory0,
+RAM.TimeStamp,
+HRAM.TotalPhysicalMemory0
+
+
+
+
+
+
+
+
+
+
+
+'
+		)
