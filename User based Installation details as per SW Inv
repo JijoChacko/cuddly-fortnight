@@ -15,11 +15,8 @@ INNER JOIN v_GS_WORKSTATION_STATUS ON v_GS_WORKSTATION_STATUS.ResourceID = v_R_S
 WHERE (dbo.v_GS_SoftwareProduct.ProductName = 'Google Chrome')
 	AND (dbo.v_GS_SoftwareProduct.ProductVersion < '74.0.3729.169')
 	AND (
-		v_RA_System_SystemOUName.System_OU_Name0 LIKE 'PROD.MAIN.NTGOV/NTG/DoH/%'
-		OR v_RA_System_SystemOUName.System_OU_Name0 LIKE 'PROD.MAIN.NTGOV/NTG/CAHS/%'
-		OR v_RA_System_SystemOUName.System_OU_Name0 LIKE 'PROD.MAIN.NTGOV/NTG/TEHS/%'
-		OR v_RA_System_SystemOUName.System_OU_Name0 LIKE 'PROD.MAIN.NTGOV/NTG/Health-Remote/%'
-		OR v_RA_System_SystemOUName.System_OU_Name0 LIKE 'PROD.MAIN.NTGOV/NTG/Health-RemoteSAT/%'
+		v_RA_System_SystemOUName.System_OU_Name0 LIKE '/DoH/%'
+		
 		)
 
 		Order by dbo.v_R_System.Name0
